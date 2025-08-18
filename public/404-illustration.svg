@@ -1,0 +1,23 @@
+<svg width="600" height="400" viewBox="0 0 600 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Elements -->
+  <circle cx="300" cy="200" r="150" fill="#EBF5FF" fillOpacity="0.5"/>
+  <circle cx="300" cy="200" r="100" fill="#DBEAFE" fillOpacity="0.5"/>
+  
+  <!-- Stadium Elements -->
+  <path d="M150 250C150 194.772 194.772 150 250 150H350C405.228 150 450 194.772 450 250V300H150V250Z" fill="#93C5FD"/>
+  <path d="M175 250C175 208.579 208.579 175 250 175H350C391.421 175 425 208.579 425 250V275H175V250Z" fill="#60A5FA"/>
+  
+  <!-- 404 Text Elements -->
+  <path d="M250 180L265 230H235L250 180Z" fill="#1E40AF"/>
+  <circle cx="300" cy="205" r="25" fill="#1E40AF"/>
+  <path d="M335 180L350 230H320L335 180Z" fill="#1E40AF"/>
+  
+  <!-- Details -->
+  <rect x="200" y="260" width="200" height="5" rx="2.5" fill="#3B82F6"/>
+  <rect x="220" y="270" width="160" height="5" rx="2.5" fill="#3B82F6"/>
+  
+  <!-- Decorative Elements -->
+  <circle cx="200" cy="150" r="5" fill="#3B82F6"/>
+  <circle cx="400" cy="150" r="5" fill="#3B82F6"/>
+  <circle cx="300" cy="120" r="5" fill="#3B82F6"/>
+</svg>

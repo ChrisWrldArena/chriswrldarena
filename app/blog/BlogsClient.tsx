@@ -1,0 +1,186 @@
+/* eslint-disable @next/next/no-img-element */
+"use client";
+import React, { useEffect, useReducer, useState } from "react";
+import Image from "next/image";
+import toast from "react-hot-toast";
+import { BlogPost } from "@/app/lib/interface";
+import moment from "moment";
+import Link from "next/link";
+import { calculateReadingTime, formatNumberShort, getEditorWordCount, getReadingTimeRange, wordTimeCalculator } from "@/app/lib/function";
+import { BarChart, Bookmark, Eye, Heart, Share, Share2, View } from "lucide-react";
+import { FaCommentAlt, FaComments } from "react-icons/fa";
+import { useRouter } from "next/navigation";
+
+
+
+const BlogsClient = () => {
+    const [posts, setPosts] = useState<BlogPost[]>([]);
+    const [loading, setLoading] = useState(true);
+    const navigation = useRouter()
+
+    useEffect(() => {
+        const fetchPosts = async () => {
+            try {
+                const res = await fetch(`/api/blogPost/?include=${JSON.stringify({ author: true, Like: true, Comment: true, Share: true, Save: true, View: true })}`);
+                if (!res.ok) throw new Error("Failed to fetch blogs");
+                const data = await res.json();
+                setPosts(data);
+            } catch {
+                setPosts([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchPosts();
+    }, []);
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this blog?")) return;
+        const res = await fetch(`/api/blogPost/${id}`, { method: "DELETE" });
+        if (res.ok) {
+            setPosts(posts.filter((b) => b.id !== id));
+            toast.success("Blog deleted");
+        } else {
+            toast.error("Failed to delete blog");
+        }
+    };
+
+    return (
+        <div className="max-w-[94rem] mx-auto">
+            <div className="absolute inset-0 bg-cover bg-center h-64 shadow-lg -z-20"
+                style={{
+                    backgroundImage: 'linear-gradient(to right, #1a1818c0, #111010cb), url(/stadium.jpg)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                }}></div>
+            <div className="sm:flex sm:items-center mt-24">
+                <div className="sm:flex-auto flex-col justify-center items-center mt-8">
+                    <h1 className="text-4xl font-semibold text-white text-center">Blog Posts</h1>
+                    <p className="mt-2 text-lg text-gray-200 text-center">
+                        Explore sporting news, strategies, predictions, and behind-the-scenes stories to enhance your sporting knowledge.
+                    </p>
+                </div>
+
+            </div>
+            <div className="mt-28 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ">
+                {loading ? (
+                    <div className="col-span-full text-center text-gray-500 py-8 h-96">
+                        Loading...
+                    </div>
+                ) : posts.length === 0 ? (
+                    <div className="col-span-full text-center text-gray-500 py-8 h-96">
+                        No blog posts found.
+                    </div>
+                ) : (
+                    posts.map((post) => {
+                        const wordcount = getEditorWordCount(JSON.parse(post.content)).wordCount
+                        const text = getEditorWordCount(JSON.parse(post.content)).text
+                        const readingspeed = getReadingTimeRange(wordcount!).wordCount
+                    
+                        const readingtime = wordTimeCalculator(text!).readingTime
+                        return (
+                            <div
+                                suppressHydrationWarning
+                                key={post.author?.id}
+                                className="flex flex-col overflow-hidden rounded-lg shadow-lg transition-shadow hover:shadow-xl cursor-pointer "
+                                onClick={() => navigation.push("/blog/" + post.id)}
+                            >
+                                <div className="flex-shrink-0">
+                                    <img
+                                        className="h-48 w-full object-cover"
+                                        src={post.image || "/default-image.jpg"}
+                                        alt={post.title}
+                                        width={400}
+                                        height={200}
+                                    />
+                                </div>
+                                <div className="flex-1 flex flex-col justify-between bg-white p-6">
+                                    <div className="flex-1">
+                                        <div className="flex items-center">
+                                            <div className="flex-shrink-0">
+                                                <img
+                                                    className="h-10 w-10 rounded-full"
+                                                    src={post.author?.image || "/avatars/default_img.webp"}
+                                                    alt={post.author?.username || "Author"}
+                                                    width={40}
+                                                    height={40}
+                                                />
+                                            </div>
+                                            <div className="ml-3">
+                                                <p className="text-base font-medium text-gray-900">
+                                                    {post.author?.username || "Unknown Author"}
+                                                </p>
+                                                <div className="flex space-x-1 text-sm text-gray-500">
+                                                    <time dateTime={moment(post.publishedAt).format("LLL")}>{moment(post!.createdAt).format('LLL')}</time>
+                                                    <span aria-hidden="true">&middot;</span>
+                                                    <span>{readingtime.formattedTime}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="w-full mt-4 inline-block">
+                                            <p className="text-xl font-semibold text-gray-900">
+                                                {post.title}
+                                            </p>
+                                            <p className="mt-3 text-sm text-gray-500 line-clamp-3">
+                                                {post.summary || "No excerpt available for this post."}
+                                            </p>
+                                        </div>
+                                        <div className="w-full flex items-center justify-between mt-4">
+                                            <div className="">
+                                                <span
+                                                    className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${post.status === "published"
+                                                        ? "bg-green-100 text-green-800"
+                                                        : "bg-yellow-100 text-yellow-800"
+                                                        }`}
+                                                >
+                                                    {post.status}
+                                                </span>
+                                                <span className="ml-2 inline-flex rounded-full bg-blue-100 px-2 text-xs font-semibold leading-5 text-blue-800">
+                                                    {post.category || "Uncategorized"}
+                                                </span>
+
+
+
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <p className="text-xs font-thin italic text-neutral-400">{[post.tags].join(",  ")}</p>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-6 flex justify-between gap-4">
+
+                                        <div className="w-full flex items-center justify-center gap-4 text-xs text-gray-500">
+                                            <div className="text-xs text-gray-500">
+                                                <BarChart className="inline-block mr-1 text-neutral-500 size-4" />
+                                                {formatNumberShort(post.View.length || '0')}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                <Heart className="inline-block mr-1 text-neutral-500 size-4" />
+                                                {formatNumberShort(post.Like.length || '0')}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                <FaComments className="inline-block mr-1 text-neutral-500 size-4" />
+                                                {formatNumberShort(post.Comment.length || '0')}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                <Share2 className="inline-block mr-1 text-neutral-500 size-4" />
+                                                {formatNumberShort(post.Share.length || '0')}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                <Bookmark className="inline-block mr-1 text-neutral-500 size-4" />
+                                                {formatNumberShort(post.Save.length || '0')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default BlogsClient;

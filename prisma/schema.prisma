@@ -1,0 +1,322 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+enum UserRole {
+  USER
+  VIP
+  ADMIN
+}
+
+enum PredictionResult {
+  PENDING
+  WON
+  LOST
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum SubscriptionPlan {
+  MONTHLY
+  YEARLY
+  DAILY
+  WEEKLY
+}
+
+enum EngagementType {
+  VIEW
+  COMMENT
+  LIKE
+  SAVE
+  SHARE
+}
+
+enum GameType {
+  VIP_GAME
+  BET_OF_THE_DAY
+  FREE_GAME
+  CORRECT_SCORE
+  DRAW_GAME
+}
+
+model User {
+  id                String              @id @default(uuid())
+  email             String              @unique
+  passwordHash      String
+  username          String              @default("")
+  phone             String?             @unique
+  role              UserRole            @default(USER)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  predictions       Prediction[]
+  subscriptions     Subscription[]
+  payments          Payment[]
+  emailVerified     Boolean             @default(false)
+  location          String              @default("")
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  Notification      Notification[]
+  BlogPost          BlogPost[]
+  Share             Share[]
+  Save              Save[]
+  Like              Like[]
+  Comment           Comment[]
+  View              View[]
+  CommentEngagement CommentEngagement[]
+
+  Settings Settings[]
+}
+
+model Prediction {
+  id          String           @id @default(uuid())
+  sportType   String
+  league      String
+  homeTeam    String
+  awayTeam    String
+  tip         String
+  analysis    String?
+  odds        String?
+  result      PredictionResult @default(PENDING)
+  publishedAt DateTime
+  createdBy   User             @relation(fields: [userId], references: [id])
+  userId      String
+  gameType    GameType         @default(FREE_GAME)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  Share       Share[]
+  Save        Save[]
+  Like        Like[]
+  Comment     Comment[]
+  View        View[]
+
+  @@index([league])
+  @@index([publishedAt])
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  user                 User               @relation(fields: [userId], references: [id])
+  userId               String
+  plan                 SubscriptionPlan
+  status               SubscriptionStatus @default(ACTIVE)
+  startedAt            DateTime
+  expiresAt            DateTime
+  flutterwavePaymentId String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  user      User          @relation(fields: [userId], references: [id])
+  userId    String
+  amount    Float
+  currency  String
+  provider  String        @default("Flutterwave")
+  status    PaymentStatus
+  reference String        @unique
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model Pricing {
+  id        String           @id @default(uuid())
+  currency  String           @default("GHS")
+  name      String
+  price     Int
+  plan      SubscriptionPlan
+  isPopular Boolean
+  features  String[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([plan, currency])
+}
+
+
+model Settings {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @unique
+  values    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model BlogPost {
+  id          String    @id @default(uuid())
+  title       String
+  slug        String    @unique
+  summary     String
+  image       String?
+  content     String
+  author      User      @relation(fields: [authorId], references: [id])
+  authorId    String
+  category    String
+  status      String    @default("draft") // draft, published, archived
+  tags        String[]  @default([])
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Share       Share[]
+  Save        Save[]
+  Like        Like[]
+  Comment     Comment[]
+  View        View[]
+
+  @@index([authorId])
+}
+
+model View {
+  id           String      @id @default(uuid())
+  user         User?       @relation(fields: [userId], references: [id])
+  userId       String?
+  prediction   Prediction? @relation(fields: [predictionId], references: [id])
+  predictionId String?
+  blogPost     BlogPost?   @relation(fields: [blogPostId], references: [id])
+  blogPostId   String?
+  createdAt    DateTime    @default(now())
+
+  @@index([userId])
+  @@index([predictionId])
+  @@index([blogPostId])
+}
+
+model Comment {
+  id           String      @id @default(uuid())
+  user         User        @relation(fields: [userId], references: [id])
+  userId       String
+  prediction   Prediction? @relation(fields: [predictionId], references: [id])
+  predictionId String?
+  blogPost     BlogPost?   @relation(fields: [blogPostId], references: [id])
+  blogPostId   String?
+  content      String
+
+  parentComment   Comment? @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  parentCommentId String?
+
+  replies Comment[] @relation("CommentReplies")
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  CommentEngagement CommentEngagement[]
+
+  @@index([userId])
+  @@index([predictionId])
+  @@index([blogPostId])
+}
+
+model Like {
+  id           String      @id @default(uuid())
+  user         User        @relation(fields: [userId], references: [id])
+  userId       String
+  prediction   Prediction? @relation(fields: [predictionId], references: [id])
+  predictionId String?
+  blogPost     BlogPost?   @relation(fields: [blogPostId], references: [id])
+  blogPostId   String?
+  createdAt    DateTime    @default(now())
+
+  @@unique([userId, predictionId])
+  @@unique([userId, blogPostId])
+  @@index([userId])
+  @@index([predictionId])
+  @@index([blogPostId])
+}
+
+model Save {
+  id           String      @id @default(uuid())
+  user         User        @relation(fields: [userId], references: [id])
+  userId       String
+  prediction   Prediction? @relation(fields: [predictionId], references: [id])
+  predictionId String?
+  blogPost     BlogPost?   @relation(fields: [blogPostId], references: [id])
+  blogPostId   String?
+  createdAt    DateTime    @default(now())
+
+  @@unique([userId, predictionId])
+  @@unique([userId, blogPostId])
+  @@index([userId])
+  @@index([predictionId])
+  @@index([blogPostId])
+}
+
+model Share {
+  id           String      @id @default(uuid())
+  user         User?       @relation(fields: [userId], references: [id])
+  userId       String?
+  prediction   Prediction? @relation(fields: [predictionId], references: [id])
+  predictionId String?
+  blogPost     BlogPost?   @relation(fields: [blogPostId], references: [id])
+  blogPostId   String?
+  platform     String?
+  createdAt    DateTime    @default(now())
+
+  @@index([userId])
+  @@index([predictionId])
+  @@index([blogPostId])
+}
+
+model CommentEngagement {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  comment   Comment  @relation(fields: [commentId], references: [id])
+  commentId String
+  type      String // VIEW, LIKE, SAVE, SHARE
+  createdAt DateTime @default(now())
+
+  @@unique([userId, commentId, type])
+  @@index([userId])
+  @@index([commentId])
+}
+
+model Title {
+  id           String @id @default(ulid())
+  defaulttitle String
+  customtitle  String
+}
+
+model BettingCode {
+  id              String   @id @default(uuid())
+  bettingPlatform String
+  bettingCode     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

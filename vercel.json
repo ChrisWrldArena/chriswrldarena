@@ -1,0 +1,9 @@
+{
+    "name": "chriswrldarena",
+    "version": 2,
+    "build": {
+        "env": {
+            "NPM_FLAGS": "--force"
+        }
+    }
+}
