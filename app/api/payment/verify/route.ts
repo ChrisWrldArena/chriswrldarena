@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
             const matchingTransaction = transactionsData.data?.find(
                 (transaction: FlutterwaveTransaction) => transaction.tx_ref === tx_ref
             )
+            //Get matching details
 
             if (!matchingTransaction) {
                 return NextResponse.json(
