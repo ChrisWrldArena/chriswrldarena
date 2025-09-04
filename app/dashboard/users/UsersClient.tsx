@@ -113,6 +113,8 @@ const UsersClient = () => {
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, roleFilter, verificationFilter]);
+    
+    // Pagination calculations
 
     const totalPages = Math.ceil(filteredAndSortedUsers.length / pageSize);
     const paginatedusers = filteredAndSortedUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
